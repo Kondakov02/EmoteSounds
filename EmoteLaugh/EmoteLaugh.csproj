@@ -70,6 +70,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Core\Plugin.cs" />
+    <Compile Include="Patches\EmoteController.cs" />
     <Compile Include="Patches\NetworkHandler.cs" />
     <Compile Include="Patches\PlayerControllerBPatch.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
