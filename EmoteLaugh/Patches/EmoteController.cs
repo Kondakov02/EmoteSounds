@@ -48,9 +48,9 @@ namespace EmoteLaugh.Patches
                 // This is done to prevent sound spam.
                 if (currentEmoteID != previousEmoteID)
                 {
-                    bool playInterruptableAudio = ModBase.InterruptableAudio.Contains(currentEmoteID);
+                    bool playLongAudio = ModBase.InterruptableAudio.Contains(currentEmoteID);
 
-                    PlaySound(playingInterruptableAudio, currentEmoteID);
+                    PlaySound(playLongAudio, currentEmoteID);
                 }
             }
 
