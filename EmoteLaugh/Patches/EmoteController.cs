@@ -1,10 +1,16 @@
-﻿using Unity.Netcode;
+﻿using EmoteLaugh.Core;
+using GameNetcodeStuff;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace EmoteLaugh.Patches
 {
     internal class EmoteController : NetworkBehaviour
     {
+        private static PlayerControllerB __player;
+
+        private static AudioSource __playerAudio;
+
         private static float oldAudioSourceVolume;
 
         private static AudioClip oldAudioClip;
@@ -15,28 +21,126 @@ namespace EmoteLaugh.Patches
 
         private static bool playingInterruptableAudio = false;
 
-        [ServerRpc (RequireOwnership = false)]
-        private void PlayEmoteSoundServerRpc(bool playLongAudio, byte emoteID)
+        public EmoteController(PlayerControllerB playerController)
         {
-            PlayEmoteSoundClientRpc(playLongAudio, emoteID);
+            __player = playerController;
+            __playerAudio = playerController.movementAudio;
         }
 
-        [ClientRpc]
-        private void PlayEmoteSoundClientRpc(bool playLongAudio, byte emoteID)
+        private void AboutToPlaySound()
         {
+            if (!IsOwner) 
+            {
+                return; 
+            }
 
+            int currentEmoteID = __player.playerBodyAnimator.GetInteger(emoteParamInAnimator);
+
+            if (ModBase.AllowDebug.Value)
+            {
+                ModBase.logger.LogDebug("Currently playing emote " + currentEmoteID);
+            }
+
+            // Check if emote is being performed and if there is a sound for it
+            if (__player.performingEmote && ModBase.EmoteSounds.ContainsKey(currentEmoteID))
+            {
+                // Check if player hasn't pressed the same button again while emoting.
+                // This is done to prevent sound spam.
+                if (currentEmoteID != previousEmoteID)
+                {
+                    bool playInterruptableAudio = ModBase.InterruptableAudio.Contains(currentEmoteID);
+
+                    PlaySound(playingInterruptableAudio, (byte)currentEmoteID);
+                }
+            }
+
+            previousEmoteID = currentEmoteID;
+
+            PlaySoundSoundServerRpc(false, 0);
         }
 
-        [ServerRpc (RequireOwnership = false)]
+        private void AboutToStopSound()
+        {
+            if (!IsOwner)
+            {
+                return;
+            }
+
+            StopEmoteSoundServerRpc(false);
+        }
+
+        private void PlaySound(bool playLongAudio, byte emoteID)
+        {
+            if (!ModBase.EmoteSounds.TryGetValue(emoteID, out AudioClip audioToPlay))
+            {
+                return;
+            }
+
+            if (playLongAudio)
+            {
+                // Save old volume and audio clip (idk if movement audio has it, just in case)
+                // Pitch is not saved because it is randomized with every footstep anyway
+                oldAudioSourceVolume = __playerAudio.volume;
+                oldAudioClip = __playerAudio.clip;
+
+                // Set the new values and play the sound
+                __playerAudio.volume = ModBase.AudioVolume;
+                __playerAudio.clip = audioToPlay;
+                __playerAudio.pitch = 1f;
+
+                __playerAudio.Play();
+
+                playingInterruptableAudio = true;
+            }
+            else
+            {
+                __playerAudio.PlayOneShot(audioToPlay, ModBase.AudioVolume);
+            }
+
+            WalkieTalkie.TransmitOneShotAudio(__playerAudio, audioToPlay, ModBase.AudioVolume);
+        }
+
+        private void StopSound()
+        {
+            previousEmoteID = 0;
+
+            if (playingInterruptableAudio)
+            {
+                __playerAudio.Stop();
+                __playerAudio.volume = oldAudioSourceVolume;
+                __playerAudio.clip = oldAudioClip;
+                playingInterruptableAudio = false;
+            }
+        }
+
+        [ServerRpc(Delivery = RpcDelivery.Unreliable)]
+        private void PlaySoundSoundServerRpc(bool playLongAudio, byte emoteID)
+        {
+            PlaySoundSoundClientRpc(playLongAudio, emoteID);
+        }
+
+        [ClientRpc(Delivery = RpcDelivery.Unreliable)]
+        private void PlaySoundSoundClientRpc(bool playLongAudio, byte emoteID)
+        {
+            if (IsOwner)
+            {
+                return;
+            }
+        }
+
+        [ServerRpc(Delivery = RpcDelivery.Unreliable)]
         private void StopEmoteSoundServerRpc(bool playingLongAudio)
         {
             StopEmoteSoundClientRpc(playingLongAudio);
         }
 
-        [ClientRpc]
+        [ClientRpc(Delivery = RpcDelivery.Unreliable)]
         private void StopEmoteSoundClientRpc(bool playingLongAudio) 
         {
-            
+            if (IsOwner)
+            {
+                return;
+            }
         }
     }
 }
