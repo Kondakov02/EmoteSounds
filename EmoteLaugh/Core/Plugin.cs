@@ -6,6 +6,7 @@ using HarmonyLib;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using UnityEngine;
 
 namespace EmoteLaugh.Core
@@ -95,6 +96,27 @@ namespace EmoteLaugh.Core
                 );
 
             AudioVolume = (float)(volumeEntry.Value / 100.0);
+
+            try
+            {
+                var types = Assembly.GetExecutingAssembly().GetTypes();
+                foreach (var type in types)
+                {
+                    var methods = type.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+                    foreach (var method in methods)
+                    {
+                        var attributes = method.GetCustomAttributes(typeof(RuntimeInitializeOnLoadMethodAttribute), false);
+                        if (attributes.Length > 0)
+                        {
+                            method.Invoke(null, null);
+                        }
+                    }
+                }
+            } 
+            catch (Exception ex)
+            {
+                logger.LogError("Unity Netcode Patcher error\n" + ex.Message);
+            }
 
             // Patch classes
             harmony.PatchAll(typeof(ModBase));
