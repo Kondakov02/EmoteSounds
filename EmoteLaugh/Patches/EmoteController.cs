@@ -15,6 +15,28 @@ namespace EmoteLaugh.Patches
 
         private static bool playingInterruptableAudio = false;
 
+        [ServerRpc (RequireOwnership = false)]
+        private void PlayEmoteSoundServerRpc(bool playLongAudio, byte emoteID)
+        {
+            PlayEmoteSoundClientRpc(playLongAudio, emoteID);
+        }
 
+        [ClientRpc]
+        private void PlayEmoteSoundClientRpc(bool playLongAudio, byte emoteID)
+        {
+
+        }
+
+        [ServerRpc (RequireOwnership = false)]
+        private void StopEmoteSoundServerRpc(bool playingLongAudio)
+        {
+            StopEmoteSoundClientRpc(playingLongAudio);
+        }
+
+        [ClientRpc]
+        private void StopEmoteSoundClientRpc(bool playingLongAudio) 
+        {
+            
+        }
     }
 }
