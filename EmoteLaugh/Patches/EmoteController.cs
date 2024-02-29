@@ -1,5 +1,7 @@
 ﻿using EmoteLaugh.Core;
 using GameNetcodeStuff;
+using System;
+using System.Reflection;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -21,19 +23,44 @@ namespace EmoteLaugh.Patches
 
         private static bool playingInterruptableAudio = false;
 
-        public EmoteController(PlayerControllerB playerController)
+        private static MethodInfo CheckConditionsForEmote;
+
+        private void Start()
         {
-            __player = playerController;
-            __playerAudio = playerController.movementAudio;
+            __player = ((Component)this).GetComponent<PlayerControllerB>();
+            __playerAudio = __player.movementAudio;
+
+            // "Check conditions" method is private, so get it through reflection
+            CheckConditionsForEmote = __player.GetType().GetMethod("CheckConditionsForEmote", BindingFlags.NonPublic | BindingFlags.Instance);
+        }
+
+        private void Update()
+        {
+            if (!IsOwner)
+            {
+                return;
+            }
+
+            if (__player.performingEmote)
+            {
+                AboutToPlaySound();
+
+                if (CheckConditionsForEmote == null)
+                {
+                    return;
+                }
+
+                bool canPerformEmote = (bool)CheckConditionsForEmote.Invoke(__player, Array.Empty<object>());
+
+                if (!canPerformEmote)
+                {
+                    AboutToStopSound();
+                }
+            }
         }
 
         private void AboutToPlaySound()
         {
-            if (!IsOwner) 
-            {
-                return; 
-            }
-
             int currentEmoteID = __player.playerBodyAnimator.GetInteger(emoteParamInAnimator);
 
             if (ModBase.AllowDebug.Value)
@@ -48,25 +75,29 @@ namespace EmoteLaugh.Patches
                 // This is done to prevent sound spam.
                 if (currentEmoteID != previousEmoteID)
                 {
-                    bool playLongAudio = ModBase.InterruptableAudio.Contains(currentEmoteID);
+                    // Safety net for when the "check conditions" method is not found in PlayerController class.
+                    // If it is not here, then EmoteController can't stop the sound and restore AudioSource values.
+                    // Instead, play the long sound as uninterruptable.
+                    bool playLongAudio = ModBase.InterruptableAudio.Contains(currentEmoteID) && CheckConditionsForEmote != null;
 
+                    // Play locally
                     PlaySound(playLongAudio, currentEmoteID);
+
+                    // Send signal to everyone else
+                    PlaySoundSoundServerRpc(playLongAudio, currentEmoteID);
                 }
             }
 
             previousEmoteID = currentEmoteID;
-
-            PlaySoundSoundServerRpc(false, 0);
         }
 
         private void AboutToStopSound()
         {
-            if (!IsOwner)
-            {
-                return;
-            }
+            // Stop locally
+            StopSound();
 
-            StopEmoteSoundServerRpc(false);
+            // Send signal to everyone else
+            StopEmoteSoundServerRpc();
         }
 
         private void PlaySound(bool playLongAudio, int emoteID)
@@ -126,21 +157,25 @@ namespace EmoteLaugh.Patches
             {
                 return;
             }
+
+            PlaySound(playLongAudio, emoteID);
         }
 
         [ServerRpc(Delivery = RpcDelivery.Unreliable)]
-        private void StopEmoteSoundServerRpc(bool playingLongAudio)
+        private void StopEmoteSoundServerRpc()
         {
-            StopEmoteSoundClientRpc(playingLongAudio);
+            StopEmoteSoundClientRpc();
         }
 
         [ClientRpc(Delivery = RpcDelivery.Unreliable)]
-        private void StopEmoteSoundClientRpc(bool playingLongAudio) 
+        private void StopEmoteSoundClientRpc() 
         {
             if (IsOwner)
             {
                 return;
             }
+
+            StopSound();
         }
     }
 }
