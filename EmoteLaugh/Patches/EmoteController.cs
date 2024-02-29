@@ -50,7 +50,7 @@ namespace EmoteLaugh.Patches
                 {
                     bool playInterruptableAudio = ModBase.InterruptableAudio.Contains(currentEmoteID);
 
-                    PlaySound(playingInterruptableAudio, (byte)currentEmoteID);
+                    PlaySound(playingInterruptableAudio, currentEmoteID);
                 }
             }
 
@@ -69,7 +69,7 @@ namespace EmoteLaugh.Patches
             StopEmoteSoundServerRpc(false);
         }
 
-        private void PlaySound(bool playLongAudio, byte emoteID)
+        private void PlaySound(bool playLongAudio, int emoteID)
         {
             if (!ModBase.EmoteSounds.TryGetValue(emoteID, out AudioClip audioToPlay))
             {
@@ -114,13 +114,13 @@ namespace EmoteLaugh.Patches
         }
 
         [ServerRpc(Delivery = RpcDelivery.Unreliable)]
-        private void PlaySoundSoundServerRpc(bool playLongAudio, byte emoteID)
+        private void PlaySoundSoundServerRpc(bool playLongAudio, int emoteID)
         {
             PlaySoundSoundClientRpc(playLongAudio, emoteID);
         }
 
         [ClientRpc(Delivery = RpcDelivery.Unreliable)]
-        private void PlaySoundSoundClientRpc(bool playLongAudio, byte emoteID)
+        private void PlaySoundSoundClientRpc(bool playLongAudio, int emoteID)
         {
             if (IsOwner)
             {
