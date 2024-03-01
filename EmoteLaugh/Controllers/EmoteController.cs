@@ -34,9 +34,12 @@ namespace EmoteLaugh.Patches
 
         private void LateUpdate()
         {
-            
+            if (!(__player.IsOwner && __player.isPlayerControlled))
+            {
+                return;
+            }
 
-            UpdateCounter++;
+            //UpdateCounter++;
 
             if (UpdateCounter >= 600)
             {
@@ -44,12 +47,6 @@ namespace EmoteLaugh.Patches
                 ModBase.logger.LogInfo("IsOwner " + __player.IsOwner);
                 ModBase.logger.LogInfo("IsPlayerControlled " + __player.isPlayerControlled);
                 UpdateCounter = 0;
-            }
-
-
-            if (!(__player.IsOwner && __player.isPlayerControlled))
-            {
-                return;
             }
 
             if (__player.performingEmote)

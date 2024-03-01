@@ -70,8 +70,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Core\Plugin.cs" />
-    <Compile Include="Patches\EmoteController.cs" />
+    <Compile Include="Controllers\EmoteController.cs" />
+    <Compile Include="Patches\GameNetworkManagerPatch.cs" />
     <Compile Include="Patches\PlayerControllerBPatch.cs" />
+    <Compile Include="Patches\StartOfRoundPatch.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
