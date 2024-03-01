@@ -1,7 +1,5 @@
 ﻿using EmoteLaugh.Core;
 using GameNetcodeStuff;
-using System;
-using System.Reflection;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -9,86 +7,88 @@ namespace EmoteLaugh.Patches
 {
     internal class EmoteController : NetworkBehaviour
     {
-        private static PlayerControllerB __player;
+        private PlayerControllerB __player = null;
 
-        private static AudioSource __playerAudio;
+        private AudioSource __playerAudio = null;
 
-        private static float oldAudioSourceVolume;
+        private float oldAudioSourceVolume = 0f;
 
-        private static AudioClip oldAudioClip;
+        private AudioClip oldAudioClip = null;
 
         private const string emoteParamInAnimator = "emoteNumber";
 
-        private static int previousEmoteID = 0;
+        private int previousEmoteID = 0;
 
-        private static bool playingInterruptableAudio = false;
+        private bool playingInterruptableAudio = false;
 
-        private static MethodInfo CheckConditionsForEmote;
+        private int UpdateCounter = 599;
+
+        private bool playingSound = false;
 
         private void Start()
         {
-            __player = ((Component)this).GetComponent<PlayerControllerB>();
+            __player = GetComponent<PlayerControllerB>();
             __playerAudio = __player.movementAudio;
-
-            // "Check conditions" method is private, so get it through reflection
-            CheckConditionsForEmote = __player.GetType().GetMethod("CheckConditionsForEmote", BindingFlags.NonPublic | BindingFlags.Instance);
+            ModBase.logger.LogInfo("Initialized emote controller");
         }
 
-        private void Update()
+        private void LateUpdate()
         {
-            if (!IsOwner)
+            if (!(IsOwner && __player.isPlayerControlled && (!IsServer || __player.isHostPlayerObject)) || __player.isTestingPlayer)
             {
                 return;
+
+            }
+
+            UpdateCounter++;
+
+            if (UpdateCounter >= 600)
+            {
+                ModBase.logger.LogInfo("Called update of emote controller, performing emote is " + __player.performingEmote);
+                UpdateCounter = 0;
             }
 
             if (__player.performingEmote)
             {
-                AboutToPlaySound();
+                int currentEmoteID = __player.playerBodyAnimator.GetInteger(emoteParamInAnimator);
 
-                if (CheckConditionsForEmote == null)
-                {
-                    return;
-                }
-
-                bool canPerformEmote = (bool)CheckConditionsForEmote.Invoke(__player, Array.Empty<object>());
-
-                if (!canPerformEmote)
-                {
-                    AboutToStopSound();
-                }
-            }
-        }
-
-        private void AboutToPlaySound()
-        {
-            int currentEmoteID = __player.playerBodyAnimator.GetInteger(emoteParamInAnimator);
-
-            if (ModBase.AllowDebug.Value)
-            {
-                ModBase.logger.LogDebug("Currently playing emote " + currentEmoteID);
-            }
-
-            // Check if emote is being performed and if there is a sound for it
-            if (__player.performingEmote && ModBase.EmoteSounds.ContainsKey(currentEmoteID))
-            {
-                // Check if player hasn't pressed the same button again while emoting.
-                // This is done to prevent sound spam.
                 if (currentEmoteID != previousEmoteID)
                 {
-                    // Safety net for when the "check conditions" method is not found in PlayerController class.
-                    // If it is not here, then EmoteController can't stop the sound and restore AudioSource values.
-                    // Instead, play the long sound as uninterruptable.
-                    bool playLongAudio = ModBase.InterruptableAudio.Contains(currentEmoteID) && CheckConditionsForEmote != null;
+                    if (playingSound)
+                    {
+                        playingSound = false;
+                        AboutToStopSound();
+                    }
+                    
+                    bool emoteHasSound = ModBase.EmoteSounds.ContainsKey(currentEmoteID);
+                    
+                    if (emoteHasSound)
+                    {
 
-                    // Play locally
-                    PlaySound(playLongAudio, currentEmoteID);
+                        ModBase.logger.LogInfo("Player is performing emote, preparing to play sound");
+                        playingSound = true;
 
-                    // Send signal to everyone else
-                    PlaySoundSoundServerRpc(playLongAudio, currentEmoteID);
+                        bool playLongAudio = ModBase.InterruptableAudio.Contains(currentEmoteID);
+
+                        ModBase.logger.LogInfo("About to play long audio - " + playLongAudio);
+
+                        // Play locally
+                        PlaySound(playLongAudio, currentEmoteID);
+
+                        // Send signal to everyone else
+                        PlayEmoteSoundServerRpc(playLongAudio, currentEmoteID);
+                    }
                 }
+                previousEmoteID = currentEmoteID;
             }
 
-            previousEmoteID = currentEmoteID;
+            if (!__player.performingEmote && playingSound)
+            {
+                ModBase.logger.LogInfo("Player stopped performing emote, stopping sound");
+                playingSound = false;
+                previousEmoteID = 0;
+                AboutToStopSound();
+            }
         }
 
         private void AboutToStopSound()
@@ -104,39 +104,44 @@ namespace EmoteLaugh.Patches
         {
             if (!ModBase.EmoteSounds.TryGetValue(emoteID, out AudioClip audioToPlay))
             {
+                ModBase.logger.LogInfo("Could not get audio clip");
                 return;
             }
 
             if (playLongAudio)
             {
+                ModBase.logger.LogInfo("Saving old audio source values");
                 // Save old volume and audio clip (idk if movement audio has it, just in case)
                 // Pitch is not saved because it is randomized with every footstep anyway
                 oldAudioSourceVolume = __playerAudio.volume;
                 oldAudioClip = __playerAudio.clip;
 
+                ModBase.logger.LogInfo("Setting new audio source values");
                 // Set the new values and play the sound
                 __playerAudio.volume = ModBase.AudioVolume;
                 __playerAudio.clip = audioToPlay;
                 __playerAudio.pitch = 1f;
 
+                ModBase.logger.LogInfo("Playing audio interruptable");
                 __playerAudio.Play();
 
                 playingInterruptableAudio = true;
             }
             else
             {
+                ModBase.logger.LogInfo("Playing audio one shot");
                 __playerAudio.PlayOneShot(audioToPlay, ModBase.AudioVolume);
             }
 
+            ModBase.logger.LogInfo("Transmitting audio over walkie");
             WalkieTalkie.TransmitOneShotAudio(__playerAudio, audioToPlay, ModBase.AudioVolume);
         }
 
         private void StopSound()
         {
-            previousEmoteID = 0;
-
             if (playingInterruptableAudio)
             {
+                ModBase.logger.LogInfo("Restoring audio source values");
                 __playerAudio.Stop();
                 __playerAudio.volume = oldAudioSourceVolume;
                 __playerAudio.clip = oldAudioClip;
@@ -144,30 +149,33 @@ namespace EmoteLaugh.Patches
             }
         }
 
-        [ServerRpc(Delivery = RpcDelivery.Unreliable)]
-        private void PlaySoundSoundServerRpc(bool playLongAudio, int emoteID)
+        [ServerRpc(RequireOwnership = false)]
+        private void PlayEmoteSoundServerRpc(bool playLongAudio, int emoteID)
         {
-            PlaySoundSoundClientRpc(playLongAudio, emoteID);
+            ModBase.logger.LogInfo("Called server RPC for playing sound");
+            PlayEmoteSoundClientRpc(playLongAudio, emoteID);
         }
 
-        [ClientRpc(Delivery = RpcDelivery.Unreliable)]
-        private void PlaySoundSoundClientRpc(bool playLongAudio, int emoteID)
+        [ClientRpc]
+        private void PlayEmoteSoundClientRpc(bool playLongAudio, int emoteID)
         {
             if (IsOwner)
             {
                 return;
             }
+            ModBase.logger.LogInfo("Called client RPC for playing sound");
 
             PlaySound(playLongAudio, emoteID);
         }
 
-        [ServerRpc(Delivery = RpcDelivery.Unreliable)]
+        [ServerRpc(RequireOwnership = false)]
         private void StopEmoteSoundServerRpc()
         {
+            ModBase.logger.LogInfo("Called server RPC for stopping sound");
             StopEmoteSoundClientRpc();
         }
 
-        [ClientRpc(Delivery = RpcDelivery.Unreliable)]
+        [ClientRpc]
         private void StopEmoteSoundClientRpc() 
         {
             if (IsOwner)
@@ -175,6 +183,7 @@ namespace EmoteLaugh.Patches
                 return;
             }
 
+            ModBase.logger.LogInfo("Called client RPC for stopping sound");
             StopSound();
         }
     }

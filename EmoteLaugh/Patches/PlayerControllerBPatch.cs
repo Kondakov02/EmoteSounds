@@ -1,7 +1,6 @@
 ﻿using EmoteLaugh.Core;
 using GameNetcodeStuff;
 using HarmonyLib;
-using UnityEngine;
 
 namespace EmoteLaugh.Patches
 {
@@ -12,7 +11,8 @@ namespace EmoteLaugh.Patches
         [HarmonyPostfix]
         private static void InjectController(PlayerControllerB __instance)
         {
-            ((Component)__instance).gameObject.AddComponent<EmoteController>();
+            ModBase.logger.LogInfo("Injected emote controller");
+            __instance.gameObject.AddComponent<EmoteController>();
         }
     }
 }
