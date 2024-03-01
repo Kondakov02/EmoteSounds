@@ -30,7 +30,9 @@ namespace EmoteLaugh.Core
         public static Dictionary<int, AudioClip> EmoteSounds { get; private set; }
         public static List<int> InterruptableAudio { get; private set; }
 
-        private static ModBase Instance;
+        public GameObject networkManagerPrefab;
+
+        public static ModBase Instance;
 
         private readonly Harmony harmony = new Harmony(modGUID);
 
@@ -52,6 +54,10 @@ namespace EmoteLaugh.Core
             string assetPath = Path.Combine(Path.GetDirectoryName(((BaseUnityPlugin)this).Info.Location), assetName);
 
             AssetBundle assetLoader = AssetBundle.LoadFromFile(assetPath);
+
+            // Load network manager and add controller to it
+            networkManagerPrefab = assetLoader.LoadAsset<GameObject>("NetworkManagerEmoteSounds");
+            networkManagerPrefab.AddComponent<EmoteController>();
 
             // Load sounds, warn users if the sounds could not be loaded
             AudioClip LaughAudio = assetLoader.LoadAsset<AudioClip>("laugh");
@@ -120,8 +126,7 @@ namespace EmoteLaugh.Core
             }
 
             // Patch classes
-            harmony.PatchAll(typeof(ModBase));
-            harmony.PatchAll(typeof(PlayerControllerBPatch));
+            harmony.PatchAll();
 
             if (Chainloader.PluginInfos.ContainsKey("MoreEmotes"))
             {
