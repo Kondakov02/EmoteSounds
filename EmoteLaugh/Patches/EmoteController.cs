@@ -37,6 +37,7 @@ namespace EmoteLaugh.Patches
             if (!(IsOwner && __player.isPlayerControlled && (!IsServer || __player.isHostPlayerObject)) || __player.isTestingPlayer)
             {
                 return;
+
             }
 
             UpdateCounter++;
@@ -63,6 +64,7 @@ namespace EmoteLaugh.Patches
                     
                     if (emoteHasSound)
                     {
+
                         ModBase.logger.LogInfo("Player is performing emote, preparing to play sound");
                         playingSound = true;
 
@@ -71,7 +73,7 @@ namespace EmoteLaugh.Patches
                         ModBase.logger.LogInfo("About to play long audio - " + playLongAudio);
 
                         // Play locally
-                        PlaySound(playLongAudio, true, currentEmoteID);
+                        PlaySound(playLongAudio, currentEmoteID);
 
                         // Send signal to everyone else
                         PlayEmoteSoundServerRpc(playLongAudio, currentEmoteID);
@@ -98,19 +100,12 @@ namespace EmoteLaugh.Patches
             StopEmoteSoundServerRpc();
         }
 
-        private void PlaySound(bool playLongAudio, bool lowerVolume, int emoteID)
+        private void PlaySound(bool playLongAudio, int emoteID)
         {
             if (!ModBase.EmoteSounds.TryGetValue(emoteID, out AudioClip audioToPlay))
             {
                 ModBase.logger.LogInfo("Could not get audio clip");
                 return;
-            }
-
-            float audioVolume = ModBase.AudioVolume;
-
-            if (lowerVolume)
-            {
-                audioVolume *= 0.1f;
             }
 
             if (playLongAudio)
@@ -123,7 +118,7 @@ namespace EmoteLaugh.Patches
 
                 ModBase.logger.LogInfo("Setting new audio source values");
                 // Set the new values and play the sound
-                __playerAudio.volume = audioVolume;
+                __playerAudio.volume = ModBase.AudioVolume;
                 __playerAudio.clip = audioToPlay;
                 __playerAudio.pitch = 1f;
 
@@ -135,7 +130,7 @@ namespace EmoteLaugh.Patches
             else
             {
                 ModBase.logger.LogInfo("Playing audio one shot");
-                __playerAudio.PlayOneShot(audioToPlay, audioVolume);
+                __playerAudio.PlayOneShot(audioToPlay, ModBase.AudioVolume);
             }
 
             ModBase.logger.LogInfo("Transmitting audio over walkie");
@@ -170,7 +165,7 @@ namespace EmoteLaugh.Patches
             }
             ModBase.logger.LogInfo("Called client RPC for playing sound");
 
-            PlaySound(playLongAudio, false, emoteID);
+            PlaySound(playLongAudio, emoteID);
         }
 
         [ServerRpc(RequireOwnership = false)]
