@@ -1,4 +1,5 @@
 ﻿using BepInEx;
+using BepInEx.Bootstrap;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using EmoteLaugh.Patches;
@@ -121,6 +122,11 @@ namespace EmoteLaugh.Core
             // Patch classes
             harmony.PatchAll(typeof(ModBase));
             harmony.PatchAll(typeof(PlayerControllerBPatch));
+
+            if (Chainloader.PluginInfos.ContainsKey("MoreEmotes"))
+            {
+                logger.LogInfo("Found the MoreEmotes mod");
+            }
         }
     }
 }

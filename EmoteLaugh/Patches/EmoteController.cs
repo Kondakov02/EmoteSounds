@@ -34,17 +34,22 @@ namespace EmoteLaugh.Patches
 
         private void LateUpdate()
         {
-            if (!(IsOwner && __player.isPlayerControlled && (!IsServer || __player.isHostPlayerObject)) || __player.isTestingPlayer)
-            {
-                return;
-            }
+            
 
             UpdateCounter++;
 
             if (UpdateCounter >= 600)
             {
-                ModBase.logger.LogInfo("Called update of emote controller, performing emote is " + __player.performingEmote);
+                ModBase.logger.LogWarning("Called update of emote controller, performing emote is " + __player.performingEmote);
+                ModBase.logger.LogInfo("IsOwner " + __player.IsOwner);
+                ModBase.logger.LogInfo("IsPlayerControlled " + __player.isPlayerControlled);
                 UpdateCounter = 0;
+            }
+
+
+            if (!(__player.IsOwner && __player.isPlayerControlled))
+            {
+                return;
             }
 
             if (__player.performingEmote)
@@ -164,7 +169,7 @@ namespace EmoteLaugh.Patches
         [ClientRpc]
         private void PlayEmoteSoundClientRpc(bool playLongAudio, int emoteID)
         {
-            if (IsOwner)
+            if (__player.IsOwner)
             {
                 return;
             }
@@ -183,7 +188,7 @@ namespace EmoteLaugh.Patches
         [ClientRpc]
         private void StopEmoteSoundClientRpc() 
         {
-            if (IsOwner)
+            if (__player.IsOwner)
             {
                 return;
             }
