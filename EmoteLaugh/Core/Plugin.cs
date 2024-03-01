@@ -75,7 +75,6 @@ namespace EmoteLaugh.Core
             // Create new dictionary (emoteID = Audio) and fill it up
             EmoteSounds = new Dictionary<int, AudioClip>
             {
-                { 1, VineBoomAudio },
                 { 2, LaughAudio },          // Point emote
                 { 3, VineBoomAudio },       // One middle finger emote
                 { 1003, VineBoomAudio },    // Two middle fingers emote
