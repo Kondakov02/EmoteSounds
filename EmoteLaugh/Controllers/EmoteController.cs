@@ -1,11 +1,11 @@
 ﻿using EmoteLaugh.Core;
+using EmoteLaugh.Network;
 using GameNetcodeStuff;
-using Unity.Netcode;
 using UnityEngine;
 
 namespace EmoteLaugh.Patches
 {
-    internal class EmoteController : NetworkBehaviour
+    internal class EmoteController : MonoBehaviour
     {
         private PlayerControllerB __player = null;
 
@@ -76,7 +76,7 @@ namespace EmoteLaugh.Patches
                         PlaySound(playLongAudio, true, currentEmoteID);
 
                         // Send signal to everyone else
-                        PlayEmoteSoundServerRpc(playLongAudio, currentEmoteID);
+                        NetworkHandler.instance.PlayEmoteSoundServerRpc();
                     }
                 }
                 previousEmoteID = currentEmoteID;
@@ -97,7 +97,7 @@ namespace EmoteLaugh.Patches
             StopSound();
 
             // Send signal to everyone else
-            StopEmoteSoundServerRpc();
+            NetworkHandler.instance.StopEmoteSoundServerRpc();
         }
 
         private void PlaySound(bool playLongAudio, bool lowerVolume, int emoteID)
@@ -154,44 +154,6 @@ namespace EmoteLaugh.Patches
                 __playerAudio.clip = oldAudioClip;
                 playingInterruptableAudio = false;
             }
-        }
-
-        [ServerRpc(RequireOwnership = false)]
-        private void PlayEmoteSoundServerRpc(bool playLongAudio, int emoteID)
-        {
-            ModBase.logger.LogInfo("Called server RPC for playing sound");
-            PlayEmoteSoundClientRpc(playLongAudio, emoteID);
-        }
-
-        [ClientRpc]
-        private void PlayEmoteSoundClientRpc(bool playLongAudio, int emoteID)
-        {
-            if (__player.IsOwner)
-            {
-                return;
-            }
-            ModBase.logger.LogInfo("Called client RPC for playing sound");
-
-            PlaySound(playLongAudio, false, emoteID);
-        }
-
-        [ServerRpc(RequireOwnership = false)]
-        private void StopEmoteSoundServerRpc()
-        {
-            ModBase.logger.LogInfo("Called server RPC for stopping sound");
-            StopEmoteSoundClientRpc();
-        }
-
-        [ClientRpc]
-        private void StopEmoteSoundClientRpc() 
-        {
-            if (__player.IsOwner)
-            {
-                return;
-            }
-
-            ModBase.logger.LogInfo("Called client RPC for stopping sound");
-            StopSound();
         }
     }
 }

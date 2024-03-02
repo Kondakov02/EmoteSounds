@@ -2,7 +2,7 @@
 using BepInEx.Bootstrap;
 using BepInEx.Configuration;
 using BepInEx.Logging;
-using EmoteLaugh.Patches;
+using EmoteLaugh.Network;
 using HarmonyLib;
 using System;
 using System.Collections.Generic;
@@ -55,14 +55,14 @@ namespace EmoteLaugh.Core
 
             AssetBundle assetLoader = AssetBundle.LoadFromFile(assetPath);
 
-            // Load network manager and add controller to it
+            // Load network manager and add handler to it
             networkManagerPrefab = assetLoader.LoadAsset<GameObject>("NetworkManagerEmoteSounds");
-            networkManagerPrefab.AddComponent<EmoteController>();
+            networkManagerPrefab.AddComponent<NetworkHandler>();
 
             // Load sounds, warn users if the sounds could not be loaded
             AudioClip LaughAudio = assetLoader.LoadAsset<AudioClip>("laugh");
             AudioClip VineBoomAudio = assetLoader.LoadAsset<AudioClip>("vine boom");
-            AudioClip SexyAudio = assetLoader.LoadAsset<AudioClip>("whistle");
+            AudioClip RizzAudio = assetLoader.LoadAsset<AudioClip>("rizz");
 
             if (LaughAudio == null)
             {
@@ -74,18 +74,18 @@ namespace EmoteLaugh.Core
                 logger.LogWarning("Could not load vine boom sound");
             }
 
-            if (SexyAudio == null)
+            if (RizzAudio == null)
             {
-                logger.LogWarning("Could not load sexy whistle sound");
+                logger.LogWarning("Could not load rizz sound");
             }
 
             // Create new dictionary (emoteID = Audio) and fill it up
             EmoteSounds = new Dictionary<int, AudioClip>
             {
-                { 2, LaughAudio },          // Point emote
+                { 2, LaughAudio },          // Point finger emote
                 { 3, VineBoomAudio },       // One middle finger emote
                 { 1003, VineBoomAudio },    // Two middle fingers emote
-                { 7, SexyAudio }            // Twerk emote
+                { 7, RizzAudio }            // Twerk emote
             };
 
             // So far only point emote has preventable audio.
