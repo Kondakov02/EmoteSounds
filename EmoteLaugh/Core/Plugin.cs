@@ -22,7 +22,7 @@ namespace EmoteLaugh.Core
 
         private const string assetName = "stupidsounds.bundle";
 
-        public static float AudioVolume { get; private set; }
+        public static ConfigEntry<int> AudioVolume { get; private set; }
 
         public static Dictionary<int, AudioClip> EmoteSounds { get; private set; }
         public static List<int> InterruptableAudio { get; private set; }
@@ -91,15 +91,13 @@ namespace EmoteLaugh.Core
             InterruptableAudio = new List<int>() { 2 };
 
             // Generate config and convert audio volume to usable value for Unity
-            ConfigEntry<int> volumeEntry = Config.Bind("General", "Audio volume", 
+            AudioVolume = Config.Bind("General", "Audio volume", 
                     100, 
-                    new ConfigDescription("How loud you want the sounds to be?", 
+                    new ConfigDescription("How loud you want the sounds to be? Restart is NOT required.", 
                         new AcceptableValueRange<int>(0, 100), 
                         Array.Empty<object>()
                     )
                 );
-
-            AudioVolume = (float)(volumeEntry.Value / 100.0);
 
             try
             {

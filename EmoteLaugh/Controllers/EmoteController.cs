@@ -108,11 +108,12 @@ namespace EmoteLaugh.Patches
                 return;
             }
 
-            float audioVolume = ModBase.AudioVolume;
+            float audioVolumeOverWalkie = (float)(ModBase.AudioVolume.Value * 0.01);
+            float audioVolumeReal = audioVolumeOverWalkie;
 
             if (__player.IsOwner)
             {
-                audioVolume *= 0.1f;
+                audioVolumeReal *= 0.1f;
             }
 
             if (playLongAudio)
@@ -124,7 +125,7 @@ namespace EmoteLaugh.Patches
                 oldAudioClip = __playerAudio.clip;
 
                 // Set the new values and play the sound
-                __playerAudio.volume = audioVolume;
+                __playerAudio.volume = audioVolumeReal;
                 __playerAudio.clip = audioToPlay;
                 __playerAudio.pitch = 1f;
 
@@ -134,10 +135,10 @@ namespace EmoteLaugh.Patches
             }
             else
             {
-                __playerAudio.PlayOneShot(audioToPlay, audioVolume);
+                __playerAudio.PlayOneShot(audioToPlay, audioVolumeReal);
             }
 
-            WalkieTalkie.TransmitOneShotAudio(__playerAudio, audioToPlay, ModBase.AudioVolume);
+            WalkieTalkie.TransmitOneShotAudio(__playerAudio, audioToPlay, audioVolumeOverWalkie);
         }
 
         public void StopSound(bool calledFromRpc)
