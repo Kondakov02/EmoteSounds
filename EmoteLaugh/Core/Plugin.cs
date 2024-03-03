@@ -88,8 +88,9 @@ namespace EmoteLaugh.Core
                 { 7, RizzAudio }            // Twerk emote
             };
 
-            // So far only point emote has preventable audio.
-            // This is done to prevent cat laugh spam. Also has purpose for funny timing
+            /* So far only point emote has preventable audio.
+             * This is done to prevent cat laugh spam. Also has purpose for funny timing
+             */
             InterruptableAudio = new List<int>() { 2 };
 
             // Generate config and convert audio volume to usable value for Unity
@@ -128,6 +129,7 @@ namespace EmoteLaugh.Core
             // Patch classes
             harmony.PatchAll();
 
+            // Remove this later
             if (Chainloader.PluginInfos.ContainsKey("MoreEmotes"))
             {
                 logger.LogInfo("Found the MoreEmotes mod");
