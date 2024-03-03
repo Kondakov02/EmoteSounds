@@ -1,5 +1,4 @@
 ﻿using BepInEx;
-using BepInEx.Bootstrap;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using EmoteLaugh.Network;
@@ -24,8 +23,6 @@ namespace EmoteLaugh.Core
         private const string assetName = "stupidsounds.bundle";
 
         public static float AudioVolume { get; private set; }
-
-        public static ConfigEntry<bool> AllowDebug { get; private set; }
 
         public static Dictionary<int, AudioClip> EmoteSounds { get; private set; }
         public static List<int> InterruptableAudio { get; private set; }
@@ -94,9 +91,8 @@ namespace EmoteLaugh.Core
             InterruptableAudio = new List<int>() { 2 };
 
             // Generate config and convert audio volume to usable value for Unity
-            AllowDebug = Config.Bind("Debug", "Allow debug logs", false, "Allow debug logs to be printed.");
             ConfigEntry<int> volumeEntry = Config.Bind("General", "Audio volume", 
-                    75, 
+                    100, 
                     new ConfigDescription("How loud you want the sounds to be?", 
                         new AcceptableValueRange<int>(0, 100), 
                         Array.Empty<object>()
@@ -129,11 +125,7 @@ namespace EmoteLaugh.Core
             // Patch classes
             harmony.PatchAll();
 
-            // Remove this later
-            if (Chainloader.PluginInfos.ContainsKey("MoreEmotes"))
-            {
-                logger.LogInfo("Found the MoreEmotes mod");
-            }
+            logger.LogInfo("Done patching");
         }
     }
 }
