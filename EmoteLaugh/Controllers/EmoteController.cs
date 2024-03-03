@@ -1,6 +1,7 @@
 ﻿using EmoteLaugh.Core;
 using EmoteLaugh.Network;
 using GameNetcodeStuff;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace EmoteLaugh.Patches
@@ -24,6 +25,14 @@ namespace EmoteLaugh.Patches
         private int UpdateCounter = 599;
 
         private bool playingSound = false;
+
+        /* This is used to determine which EmoteController instance to call in ClientRpc
+         * See GetEmoteController method in NetworkHandler class
+         */
+        private ulong GetPlayerID()
+        {
+            return StartOfRound.Instance.localPlayerController.GetComponent<NetworkObject>().NetworkObjectId;
+        }
 
         private void Start()
         {
@@ -76,7 +85,7 @@ namespace EmoteLaugh.Patches
                         PlaySound(playLongAudio, true, currentEmoteID);
 
                         // Send signal to everyone else
-                        NetworkHandler.instance.PlayEmoteSoundServerRpc();
+                        NetworkHandler.instance.PlayEmoteSoundServerRpc(GetPlayerID(), playLongAudio, false, currentEmoteID);
                     }
                 }
                 previousEmoteID = currentEmoteID;
@@ -97,10 +106,10 @@ namespace EmoteLaugh.Patches
             StopSound();
 
             // Send signal to everyone else
-            NetworkHandler.instance.StopEmoteSoundServerRpc();
+            NetworkHandler.instance.StopEmoteSoundServerRpc(GetPlayerID());
         }
 
-        private void PlaySound(bool playLongAudio, bool lowerVolume, int emoteID)
+        public void PlaySound(bool playLongAudio, bool lowerVolume, int emoteID)
         {
             if (!ModBase.EmoteSounds.TryGetValue(emoteID, out AudioClip audioToPlay))
             {
@@ -118,8 +127,9 @@ namespace EmoteLaugh.Patches
             if (playLongAudio)
             {
                 ModBase.logger.LogInfo("Saving old audio source values");
-                // Save old volume and audio clip (idk if movement audio has it, just in case)
-                // Pitch is not saved because it is randomized with every footstep anyway
+                /* Save old volume and audio clip (idk if movement audio has it, just in case)
+                 * Pitch is not saved because it is randomized with every footstep anyway
+                 */
                 oldAudioSourceVolume = __playerAudio.volume;
                 oldAudioClip = __playerAudio.clip;
 
@@ -144,7 +154,7 @@ namespace EmoteLaugh.Patches
             WalkieTalkie.TransmitOneShotAudio(__playerAudio, audioToPlay, ModBase.AudioVolume);
         }
 
-        private void StopSound()
+        public void StopSound()
         {
             if (playingInterruptableAudio)
             {
