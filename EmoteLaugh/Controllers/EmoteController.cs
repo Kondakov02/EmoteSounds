@@ -99,6 +99,9 @@ namespace EmoteLaugh.Patches
                 return;
             }
 
+            bool muffled = __player.isInHangarShipRoom && __player.playersManager.hangarDoorsClosed;
+            RoundManager.Instance.PlayAudibleNoise(__player.transform.position, 30f, 1f, 0, muffled, 0);
+
             if (!ModBase.EmoteSounds.TryGetValue(emoteID, out AudioClip audioToPlay))
             {
                 ModBase.logger.LogInfo("Could not get audio clip");
