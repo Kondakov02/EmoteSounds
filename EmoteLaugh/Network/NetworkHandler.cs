@@ -49,14 +49,14 @@ namespace EmoteLaugh.Network
         }
 
         [ServerRpc(RequireOwnership = false)]
-        public void PlayEmoteSoundServerRpc(ulong playerID, bool playLongAudio, bool lowerVolume, int emoteID)
+        public void PlayEmoteSoundServerRpc(ulong playerID, bool playLongAudio, int emoteID)
         {
             ModBase.logger.LogInfo("Called server RPC for playing sound");
-            PlayEmoteSoundClientRpc(playerID, playLongAudio, lowerVolume, emoteID);
+            PlayEmoteSoundClientRpc(playerID, playLongAudio, emoteID);
         }
 
         [ClientRpc]
-        public void PlayEmoteSoundClientRpc(ulong playerID, bool playLongAudio, bool lowerVolume, int emoteID)
+        public void PlayEmoteSoundClientRpc(ulong playerID, bool playLongAudio, int emoteID)
         {
             ModBase.logger.LogInfo("Called client RPC for playing sound");
 
@@ -64,7 +64,7 @@ namespace EmoteLaugh.Network
 
             if (emoteC != null)
             {
-                emoteC.PlaySound(playLongAudio, lowerVolume, emoteID);
+                emoteC.PlaySound(playLongAudio, emoteID, true);
             }
         }
 
@@ -84,7 +84,7 @@ namespace EmoteLaugh.Network
 
             if (emoteC != null)
             {
-                emoteC.StopSound();
+                emoteC.StopSound(true);
             }
         }
     }

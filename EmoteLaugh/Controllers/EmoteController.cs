@@ -82,10 +82,10 @@ namespace EmoteLaugh.Patches
                         ModBase.logger.LogInfo("About to play long audio - " + playLongAudio);
 
                         // Play locally
-                        PlaySound(playLongAudio, true, currentEmoteID);
+                        PlaySound(playLongAudio, currentEmoteID, false);
 
                         // Send signal to everyone else
-                        NetworkHandler.instance.PlayEmoteSoundServerRpc(GetPlayerID(), playLongAudio, false, currentEmoteID);
+                        NetworkHandler.instance.PlayEmoteSoundServerRpc(GetPlayerID(), playLongAudio, currentEmoteID);
                     }
                 }
                 previousEmoteID = currentEmoteID;
@@ -103,14 +103,19 @@ namespace EmoteLaugh.Patches
         private void AboutToStopSound()
         {
             // Stop locally
-            StopSound();
+            StopSound(false);
 
             // Send signal to everyone else
             NetworkHandler.instance.StopEmoteSoundServerRpc(GetPlayerID());
         }
 
-        public void PlaySound(bool playLongAudio, bool lowerVolume, int emoteID)
+        public void PlaySound(bool playLongAudio, int emoteID, bool calledFromRpc)
         {
+            if (calledFromRpc && __player.IsOwner)
+            {
+                return;
+            }
+
             if (!ModBase.EmoteSounds.TryGetValue(emoteID, out AudioClip audioToPlay))
             {
                 ModBase.logger.LogInfo("Could not get audio clip");
@@ -119,7 +124,7 @@ namespace EmoteLaugh.Patches
 
             float audioVolume = ModBase.AudioVolume;
 
-            if (lowerVolume)
+            if (__player.IsOwner)
             {
                 audioVolume *= 0.1f;
             }
@@ -154,8 +159,13 @@ namespace EmoteLaugh.Patches
             WalkieTalkie.TransmitOneShotAudio(__playerAudio, audioToPlay, ModBase.AudioVolume);
         }
 
-        public void StopSound()
+        public void StopSound(bool calledFromRpc)
         {
+            if (calledFromRpc && __player.IsOwner)
+            {
+                return;
+            }
+
             if (playingInterruptableAudio)
             {
                 ModBase.logger.LogInfo("Restoring audio source values");
