@@ -14,11 +14,11 @@ namespace EmoteLaugh.Core
     [BepInPlugin(modGUID, modName, modVersion)]
     public class ModBase : BaseUnityPlugin
     {
-        private const string modGUID = "thekagamiest.EmoteSounds";
+        private const string modGUID = "thekagamiest.EmployeeLaughingAtYou";
 
-        private const string modName = "EmoteSounds";
+        private const string modName = "EmployeeLaughingAtYou";
 
-        private const string modVersion = "1.0.0";
+        private const string modVersion = "1.1.0";
 
         private const string assetName = "stupidsounds.bundle";
 
