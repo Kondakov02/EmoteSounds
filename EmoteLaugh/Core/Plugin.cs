@@ -22,7 +22,8 @@ namespace EmoteLaugh.Core
 
         private const string assetName = "stupidsounds.bundle";
 
-        public static ConfigEntry<int> AudioVolume { get; private set; }
+        public static ConfigEntry<int> LocalAudioVolume { get; private set; }
+        public static ConfigEntry<int> GlobalAudioVolume { get; private set; }
 
         public static Dictionary<int, AudioClip> EmoteSounds { get; private set; }
         public static List<int> InterruptableAudio { get; private set; }
@@ -90,10 +91,18 @@ namespace EmoteLaugh.Core
              */
             InterruptableAudio = new List<int>() { 2 };
 
-            // Generate config and convert audio volume to usable value for Unity
-            AudioVolume = Config.Bind("General", "Audio volume", 
+            // Generate config
+            LocalAudioVolume = Config.Bind("General", "Local audio volume",
+                    50,
+                    new ConfigDescription("How loud you want own sounds to be for yourself?",
+                        new AcceptableValueRange<int>(0, 100),
+                        Array.Empty<object>()
+                    )
+                );
+            GlobalAudioVolume = Config.Bind("General", "Global audio volume", 
                     100, 
-                    new ConfigDescription("How loud you want the sounds to be? Restart is NOT required.", 
+                    new ConfigDescription("How loud you want the sounds made by other players to be? " +
+                    "This is independent of local volume.", 
                         new AcceptableValueRange<int>(0, 100), 
                         Array.Empty<object>()
                     )
