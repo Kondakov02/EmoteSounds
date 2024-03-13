@@ -53,7 +53,6 @@ namespace EmoteLaugh.Patches
                 {
                     if (playingSound)
                     {
-                        playingSound = false;
                         AboutToStopSound();
                     }
                     
@@ -77,7 +76,6 @@ namespace EmoteLaugh.Patches
 
             if (!__player.performingEmote && playingSound)
             {
-                playingSound = false;
                 previousEmoteID = 0;
                 AboutToStopSound();
             }
@@ -85,6 +83,8 @@ namespace EmoteLaugh.Patches
 
         private void AboutToStopSound()
         {
+            playingSound = false;
+
             // Stop locally
             StopSound(false);
 
