@@ -40,6 +40,7 @@ namespace EmoteLaugh.Patches
 
         private void LateUpdate()
         {
+            var a = 1;
             if (!(__player.IsOwner && __player.isPlayerControlled))
             {
                 return;
